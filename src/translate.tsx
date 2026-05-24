@@ -113,7 +113,6 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
 }
 
 function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
-  const phonetic = phoneticOf(entry);
   const sourceTag = {
     tag: { value: SOURCE_LABEL[entry.source], color: SOURCE_COLOR[entry.source] },
     tooltip: `数据源：${SOURCE_LABEL[entry.source]}`,
@@ -131,10 +130,7 @@ function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk"
           icon={SECTION_ICON[kind]}
           title={SECTION_LABEL[kind]}
           subtitle={`${countOf(entry, kind)} 项`}
-          accessories={[
-            ...(kind === "explanations" && phonetic ? [{ text: phonetic, tooltip: "音标" }] : []),
-            sourceTag,
-          ]}
+          accessories={[sourceTag]}
           detail={<List.Item.Detail markdown={sectionMarkdown(entry, kind)} />}
           actions={<DetailRowActions entry={entry} kind={kind} voice={voice} />}
         />
