@@ -1,4 +1,10 @@
-import { Clipboard, getSelectedText, launchCommand, LaunchType, showHUD } from "@raycast/api";
+import {
+  Clipboard,
+  getSelectedText,
+  launchCommand,
+  LaunchType,
+  showHUD,
+} from "@raycast/api";
 
 export default async function LookupSelection() {
   let text = "";

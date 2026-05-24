@@ -1,4 +1,13 @@
-import { Action, ActionPanel, Color, getPreferenceValues, Icon, LaunchProps, List, open } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Color,
+  getPreferenceValues,
+  Icon,
+  LaunchProps,
+  List,
+  open,
+} from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { getSource } from "./lib/sources";
@@ -41,14 +50,18 @@ const SECTION_ICON: Record<SectionKind, Icon> = {
   examples: Icon.QuoteBlock,
 };
 
-export default function Translate(props: LaunchProps<{ launchContext?: TranslateLaunchContext }>) {
+export default function Translate(
+  props: LaunchProps<{ launchContext?: TranslateLaunchContext }>,
+) {
   const prefs = getPreferenceValues<Prefs>();
   const initial = props.launchContext?.query ?? "";
   const [query, setQuery] = useState(initial);
   const [showDetail, setShowDetail] = useState(prefs.defaultView === "detail");
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
-  const sourceId: SourceId = sentence ? prefs.translatorSource : prefs.wordSource;
+  const sourceId: SourceId = sentence
+    ? prefs.translatorSource
+    : prefs.wordSource;
 
   const { data, isLoading, error } = usePromise(
     async (q: string, id: typeof sourceId): Promise<DictEntry | null> => {
@@ -60,7 +73,9 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   );
 
   const navTitle = `${trimmed ? (sentence ? "翻译" : "查词") : "LightMindDict"} · ${SOURCE_LABEL[sourceId]}`;
-  const hasContent = !!data && ((data.explanations?.length ?? 0) > 0 || data.translations.length > 0);
+  const hasContent =
+    !!data &&
+    ((data.explanations?.length ?? 0) > 0 || data.translations.length > 0);
 
   return (
     <List
@@ -77,8 +92,16 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
           value={showDetail ? "detail" : "list"}
           onChange={(v) => setShowDetail(v === "detail")}
         >
-          <List.Dropdown.Item title="列表视图" value="list" icon={Icon.AppWindowList} />
-          <List.Dropdown.Item title="详情视图" value="detail" icon={Icon.AppWindowSidebarRight} />
+          <List.Dropdown.Item
+            title="列表视图"
+            value="list"
+            icon={Icon.AppWindowList}
+          />
+          <List.Dropdown.Item
+            title="详情视图"
+            value="detail"
+            icon={Icon.AppWindowSidebarRight}
+          />
         </List.Dropdown>
       }
     >
@@ -98,7 +121,11 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
         showDetail ? (
           <DetailSections entry={data} voice={prefs.ttsVoice} />
         ) : (
-          <ListRows entry={data} voice={prefs.ttsVoice} onShowDetail={() => setShowDetail(true)} />
+          <ListRows
+            entry={data}
+            voice={prefs.ttsVoice}
+            onShowDetail={() => setShowDetail(true)}
+          />
         )
       ) : data ? (
         <List.EmptyView
@@ -113,9 +140,18 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   );
 }
 
-function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
+function DetailSections({
+  entry,
+  voice,
+}: {
+  entry: DictEntry;
+  voice: "us" | "uk";
+}) {
   const sourceTag = {
-    tag: { value: SOURCE_LABEL[entry.source], color: SOURCE_COLOR[entry.source] },
+    tag: {
+      value: SOURCE_LABEL[entry.source],
+      color: SOURCE_COLOR[entry.source],
+    },
     tooltip: `数据源：${SOURCE_LABEL[entry.source]}`,
   };
   const sections: SectionKind[] = [];
@@ -151,7 +187,10 @@ function ListRows({
 }) {
   const phonetic = phoneticOf(entry);
   const sourceTag = {
-    tag: { value: SOURCE_LABEL[entry.source], color: SOURCE_COLOR[entry.source] },
+    tag: {
+      value: SOURCE_LABEL[entry.source],
+      color: SOURCE_COLOR[entry.source],
+    },
     tooltip: `数据源：${SOURCE_LABEL[entry.source]}`,
   };
   const subtitle = `来自 ${SOURCE_LABEL[entry.source]}`;
@@ -169,7 +208,14 @@ function ListRows({
                 ...(phonetic && i === 0 ? [{ text: phonetic }] : []),
                 ...(i === 0 ? [sourceTag] : []),
               ]}
-              actions={<ListRowActions entry={entry} text={line} voice={voice} onShowDetail={onShowDetail} />}
+              actions={
+                <ListRowActions
+                  entry={entry}
+                  text={line}
+                  voice={voice}
+                  onShowDetail={onShowDetail}
+                />
+              }
             />
           ))}
         </List.Section>
@@ -182,7 +228,14 @@ function ListRows({
               icon={Icon.Text}
               title={line}
               accessories={i === 0 ? [sourceTag] : undefined}
-              actions={<ListRowActions entry={entry} text={line} voice={voice} onShowDetail={onShowDetail} />}
+              actions={
+                <ListRowActions
+                  entry={entry}
+                  text={line}
+                  voice={voice}
+                  onShowDetail={onShowDetail}
+                />
+              }
             />
           ))}
         </List.Section>
@@ -246,7 +299,10 @@ function DetailRowActions({
   const webUrl = browserUrlFor(entry);
   return (
     <ActionPanel>
-      <Action.CopyToClipboard title={`复制${SECTION_LABEL[kind]}`} content={sectionPlain(entry, kind)} />
+      <Action.CopyToClipboard
+        title={`复制${SECTION_LABEL[kind]}`}
+        content={sectionPlain(entry, kind)}
+      />
       <Action.CopyToClipboard
         title="复制完整释义"
         content={fullMarkdown(entry)}
@@ -312,7 +368,9 @@ function sectionMarkdown(entry: DictEntry, kind: SectionKind): string {
 function sectionPlain(entry: DictEntry, kind: SectionKind): string {
   if (kind === "explanations") return (entry.explanations ?? []).join("\n");
   if (kind === "translations") return entry.translations.join("\n");
-  return (entry.examples ?? []).map((ex) => `${ex.src}\n${ex.trans}`).join("\n\n");
+  return (entry.examples ?? [])
+    .map((ex) => `${ex.src}\n${ex.trans}`)
+    .join("\n\n");
 }
 
 function fullMarkdown(entry: DictEntry): string {

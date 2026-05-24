@@ -1,5 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
-import { DictEntry, DictSource } from "../types";
+import { DictSource } from "../types";
 import { PrefLang, resolveTarget } from "../lang";
 
 type GoogleResponse = [Array<[string, ...unknown[]]> | null, ...unknown[]];
@@ -7,7 +7,9 @@ type GoogleResponse = [Array<[string, ...unknown[]]> | null, ...unknown[]];
 export const google: DictSource = {
   id: "google",
   async lookup(query, signal) {
-    const { targetLanguage } = getPreferenceValues<{ targetLanguage: PrefLang }>();
+    const { targetLanguage } = getPreferenceValues<{
+      targetLanguage: PrefLang;
+    }>();
     const tl = resolveTarget(query, targetLanguage, "google");
 
     const url = new URL("https://translate.googleapis.com/translate_a/single");
@@ -26,7 +28,8 @@ export const google: DictSource = {
       .map((s) => (typeof s[0] === "string" ? s[0] : ""))
       .join("")
       .trim();
-    const detected = typeof data[2] === "string" ? (data[2] as string) : undefined;
+    const detected =
+      typeof data[2] === "string" ? (data[2] as string) : undefined;
 
     return {
       query,

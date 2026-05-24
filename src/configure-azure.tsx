@@ -1,4 +1,12 @@
-import { Action, ActionPanel, Form, Icon, popToRoot, showToast, Toast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Form,
+  Icon,
+  popToRoot,
+  showToast,
+  Toast,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getAzureCreds, saveAzureCreds } from "./lib/azure-config";
 
@@ -17,7 +25,10 @@ export default function ConfigureAzure() {
   }, []);
 
   async function onSubmit() {
-    await saveAzureCreds({ key: key.trim(), region: region.trim() || "global" });
+    await saveAzureCreds({
+      key: key.trim(),
+      region: region.trim() || "global",
+    });
     await showToast({ style: Toast.Style.Success, title: "Azure 配置已保存" });
     await popToRoot();
   }
@@ -27,11 +38,21 @@ export default function ConfigureAzure() {
       isLoading={isLoading}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="保存" icon={Icon.SaveDocument} onSubmit={onSubmit} />
+          <Action.SubmitForm
+            title="保存"
+            icon={Icon.SaveDocument}
+            onSubmit={onSubmit}
+          />
         </ActionPanel>
       }
     >
-      <Form.PasswordField id="key" title="Azure Key" value={key} onChange={setKey} placeholder="订阅密钥" />
+      <Form.PasswordField
+        id="key"
+        title="Azure Key"
+        value={key}
+        onChange={setKey}
+        placeholder="订阅密钥"
+      />
       <Form.TextField
         id="region"
         title="Azure Region"

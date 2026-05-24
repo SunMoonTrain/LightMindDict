@@ -13,14 +13,14 @@
       "name": "translate",
       "title": "Translate",
       "subtitle": "LightMindDict",
-      "description": "查词 / 翻译",
+      "description": "在 Raycast 中查词或翻译句子，支持多个数据源",
       "mode": "view"
     },
     {
       "name": "lookup-selection",
       "title": "Lookup Selection",
       "subtitle": "LightMindDict",
-      "description": "查询当前选中的文本",
+      "description": "查询当前在任意应用中选中的文本",
       "mode": "no-view"
     },
     {

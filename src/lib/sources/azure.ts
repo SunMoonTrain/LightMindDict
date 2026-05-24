@@ -11,7 +11,9 @@ interface AzureResponse {
 export const azure: DictSource = {
   id: "azure",
   async lookup(query, signal) {
-    const { targetLanguage } = getPreferenceValues<{ targetLanguage: PrefLang }>();
+    const { targetLanguage } = getPreferenceValues<{
+      targetLanguage: PrefLang;
+    }>();
     const { key, region } = await getAzureCreds();
     if (!key) throw new Error("请先运行 'Configure Azure' 命令填入 Key");
 
@@ -36,7 +38,8 @@ export const azure: DictSource = {
     }
     const data = (await res.json()) as AzureResponse[];
     const first = data[0];
-    const translations = first?.translations?.map((t) => t.text).filter(Boolean) ?? [];
+    const translations =
+      first?.translations?.map((t) => t.text).filter(Boolean) ?? [];
 
     return {
       query,
