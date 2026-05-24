@@ -10,6 +10,7 @@ import {
 } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
+import { getCached, setCached } from "./lib/cache";
 import { getSource } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
 import { DictEntry, isSentence, SourceId } from "./lib/types";
@@ -66,7 +67,11 @@ export default function Translate(
   const { data, isLoading, error } = usePromise(
     async (q: string, id: typeof sourceId): Promise<DictEntry | null> => {
       if (!q) return null;
-      return getSource(id).lookup(q);
+      const cached = getCached(id, q);
+      if (cached) return cached;
+      const entry = await getSource(id).lookup(q);
+      setCached(id, q, entry);
+      return entry;
     },
     [trimmed, sourceId],
     { execute: trimmed.length > 0 },
