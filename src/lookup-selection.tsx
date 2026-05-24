@@ -1,12 +1,6 @@
-import { Clipboard, getPreferenceValues, getSelectedText, launchCommand, LaunchType, showHUD } from "@raycast/api";
-import { SourceId } from "./lib/types";
-
-interface Prefs {
-  primarySource: SourceId;
-}
+import { Clipboard, getSelectedText, launchCommand, LaunchType, showHUD } from "@raycast/api";
 
 export default async function LookupSelection() {
-  void getPreferenceValues<Prefs>();
   let text = "";
   try {
     text = (await getSelectedText()).trim();
@@ -20,6 +14,6 @@ export default async function LookupSelection() {
   await launchCommand({
     name: "translate",
     type: LaunchType.UserInitiated,
-    fallbackText: text,
+    context: { query: text },
   });
 }

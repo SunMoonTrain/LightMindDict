@@ -1,9 +1,11 @@
-import { Action, ActionPanel, Color, getPreferenceValues, Icon, List, open } from "@raycast/api";
+import { Action, ActionPanel, Color, getPreferenceValues, Icon, LaunchProps, List, open } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { getSource } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
 import { DictEntry, isSentence, SourceId } from "./lib/types";
+
+type TranslateLaunchContext = { query?: string };
 
 interface Prefs {
   wordSource: SourceId;
@@ -24,9 +26,10 @@ const SOURCE_COLOR: Record<SourceId, Color> = {
   azure: Color.PrimaryText,
 };
 
-export default function Translate() {
+export default function Translate(props: LaunchProps<{ launchContext?: TranslateLaunchContext }>) {
   const prefs = getPreferenceValues<Prefs>();
-  const [query, setQuery] = useState("");
+  const initial = props.launchContext?.query ?? "";
+  const [query, setQuery] = useState(initial);
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
   const sourceId: SourceId = sentence ? prefs.translatorSource : prefs.wordSource;
@@ -45,6 +48,7 @@ export default function Translate() {
   return (
     <List
       isLoading={isLoading}
+      searchText={query}
       onSearchTextChange={setQuery}
       searchBarPlaceholder="输入要查的词或句子"
       navigationTitle={navTitle}
