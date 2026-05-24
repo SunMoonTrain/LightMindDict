@@ -73,6 +73,18 @@
       ]
     },
     {
+      "name": "defaultView",
+      "title": "默认视图",
+      "description": "Translate 命令打开时的初始视图",
+      "type": "dropdown",
+      "required": false,
+      "default": "list",
+      "data": [
+        { "title": "列表视图", "value": "list" },
+        { "title": "详情视图", "value": "detail" }
+      ]
+    },
+    {
       "name": "ttsVoice",
       "title": "发音偏好",
       "description": "英文单词的发音口音",

@@ -12,6 +12,7 @@ interface Prefs {
   translatorSource: SourceId;
   targetLanguage: string;
   ttsVoice: "us" | "uk";
+  defaultView: "list" | "detail";
 }
 
 type SectionKind = "explanations" | "translations" | "examples";
@@ -44,7 +45,7 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   const prefs = getPreferenceValues<Prefs>();
   const initial = props.launchContext?.query ?? "";
   const [query, setQuery] = useState(initial);
-  const [showDetail, setShowDetail] = useState(false);
+  const [showDetail, setShowDetail] = useState(prefs.defaultView === "detail");
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
   const sourceId: SourceId = sentence ? prefs.translatorSource : prefs.wordSource;
