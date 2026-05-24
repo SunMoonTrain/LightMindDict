@@ -7,8 +7,8 @@
 - 🔍 划词 / 输入即查，结果秒回
 - 📚 支持中英互译、单词释义、例句、音标
 - 🔊 发音播放（在线 TTS）
-- 🕘 查询历史与生词本（本地存储）
-- 🔄 **多词典源可切换**，默认走免费源，按需替换
+- 🪟 列表 / 详情 双视图，默认视图可配置
+- 🔄 **单词源、翻译源分开配置**，默认走免费源，按需替换
 - ⚙️ 全部配置项暴露在 Raycast Preferences 中，无需改代码
 
 ## 词典源
@@ -26,12 +26,11 @@
 
 > 免费接口为非官方公开端点，可能限流或调整，请合理使用。Google Translate 在国内访问可能需代理，遇到不通可切换到 Azure。
 
-### 可换源（路线图）
+### 待办源（看需求决定是否补）
 
 - 有道智云开放平台（官方 API）
 - 百度翻译开放平台
 - DeepL API
-- 欧路词典（Eudic）API
 - 自定义 HTTP 源（指定 URL 模板与字段映射）
 
 ## 安装
@@ -39,19 +38,21 @@
 > 需要 Raycast for Windows（公测版及以上）。
 
 ```powershell
-git clone https://github.com/<you>/LightMindDict.git
+git clone https://github.com/SunMoonTrain/LightMindDict.git
 cd LightMindDict
 npm install
 npm run dev
 ```
 
-在 Raycast 中通过 "Import Extension" 加载本目录即可。
+在 Raycast 中通过 "Import Extension" 加载本目录即可（首次需保留 `npm run dev` 运行；之后用 `npm run build` 后可独立加载 `dist/`）。
 
 ## 使用
 
 - `Translate` — 输入框直接查词 / 句
-- `Lookup Selection` — 对当前选中文本查词（可绑定全局快捷键）
+- `Lookup Selection` — 对当前选中文本查词（推荐在 Raycast 偏好里绑全局快捷键）
 - `Configure Azure` — 配置 Azure Translator 的 Key / Region（仅选 Azure 源时需要）
+
+视图切换：搜索栏右侧 Dropdown 在列表视图 / 详情视图之间切换；默认视图在 Preferences 里设置。
 
 ## 配置
 
@@ -60,6 +61,7 @@ npm run dev
 - **Word Source**：单词源（默认有道）
 - **Translator Source**：翻译源（默认 Google）
 - **Target Language**：默认目标语言（auto / zh / en / ja）
+- **Default View**：Translate 命令打开时的初始视图（列表 / 详情）
 - **TTS Voice**：发音偏好（美音 / 英音）
 
 Azure 的 Key 与 Region 不在偏好里 —— 通过 `Configure Azure` 命令打开表单填写，保存在 Raycast LocalStorage，不需要 Azure 时偏好面板里完全看不到。
@@ -73,14 +75,6 @@ npm run lint       # 代码检查
 ```
 
 技术栈：TypeScript + React + Raycast API。
-
-## 路线图
-
-- [ ] MVP：有道源 + 输入查词 + 发音
-- [ ] 划词查询（选中文本触发）
-- [ ] 生词本导出（Anki / CSV）
-- [ ] 自定义 HTTP 源
-- [ ] 离线词库支持（StarDict / MDX）
 
 ## 许可
 
