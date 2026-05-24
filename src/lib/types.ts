@@ -1,4 +1,5 @@
-export type SourceId = "youdao-public" | "youdao-cloud" | "baidu" | "deepl" | "custom";
+export type SourceId = "youdao-public" | "google" | "azure";
+export type SourceMode = "smart" | SourceId;
 
 export interface DictEntry {
   query: string;
@@ -7,9 +8,14 @@ export interface DictEntry {
   explanations?: string[];
   examples?: { src: string; trans: string }[];
   source: SourceId;
+  detectedLanguage?: string;
 }
 
 export interface DictSource {
   id: SourceId;
   lookup(query: string, signal?: AbortSignal): Promise<DictEntry>;
+}
+
+export function isSentence(s: string): boolean {
+  return /\s|[,.，。！？!?:;；：]/.test(s) || s.length > 10;
 }

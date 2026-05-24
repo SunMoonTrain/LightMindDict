@@ -28,17 +28,32 @@
     {
       "name": "primarySource",
       "title": "主词典源",
-      "description": "默认使用的词典源",
+      "description": "Smart：单词走有道，句子走 Google。也可强制指定单一源。",
       "type": "dropdown",
       "required": false,
-      "default": "youdao-public",
+      "default": "smart",
       "data": [
+        { "title": "Smart（自动：单词→有道，句子→Google）", "value": "smart" },
         { "title": "有道（公开接口，免费）", "value": "youdao-public" },
-        { "title": "有道智云（需 Key）", "value": "youdao-cloud" },
-        { "title": "百度翻译（需 Key）", "value": "baidu" },
-        { "title": "DeepL（需 Key）", "value": "deepl" },
-        { "title": "自定义 HTTP 源", "value": "custom" }
+        { "title": "Google Translate（免费，可能需代理）", "value": "google" },
+        { "title": "Azure Translator（需 Key）", "value": "azure" }
       ]
+    },
+    {
+      "name": "azureKey",
+      "title": "Azure Translator Key",
+      "description": "Azure 认知服务的订阅密钥（选 Azure 源时必填）",
+      "type": "password",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "azureRegion",
+      "title": "Azure 区域",
+      "description": "如 eastasia / westus；全球资源可留空",
+      "type": "textfield",
+      "required": false,
+      "default": "global"
     },
     {
       "name": "targetLanguage",

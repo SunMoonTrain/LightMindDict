@@ -1,13 +1,19 @@
-import { DictSource, SourceId } from "../types";
+import { DictSource, isSentence, SourceId, SourceMode } from "../types";
+import { azure } from "./azure";
+import { google } from "./google";
 import { youdaoPublic } from "./youdao-public";
 
-const registry: Partial<Record<SourceId, DictSource>> = {
+const registry: Record<SourceId, DictSource> = {
   "youdao-public": youdaoPublic,
+  google,
+  azure,
 };
 
 export function getSource(id: SourceId): DictSource {
-  const src = registry[id];
-  if (src) return src;
-  // 其它源（youdao-cloud / baidu / deepl / custom）暂未实现，回退到免费源
-  return youdaoPublic;
+  return registry[id];
+}
+
+export function resolveSourceId(mode: SourceMode, query: string): SourceId {
+  if (mode === "smart") return isSentence(query) ? "google" : "youdao-public";
+  return mode;
 }

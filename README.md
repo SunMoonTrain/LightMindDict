@@ -17,16 +17,16 @@
 
 | 源 | 说明 | 是否需要 Key | 默认 |
 | --- | --- | --- | --- |
-| 有道公开接口 (`dict.youdao.com/jsonapi`) | 中英互译、释义、例句、音标 | 否 | ✅ |
+| 有道公开接口 (`dict.youdao.com/jsonapi`) | 中英互译、释义、例句、音标 | 否 | ✅ 单词 |
+| Google Translate (`translate.googleapis.com`) | 句子翻译，多语种 | 否 | ✅ 句子 |
 | 有道 TTS (`dict.youdao.com/dictvoice`) | 单词发音 | 否 | ✅ |
-| Bing 词典 | 备用释义 / 例句 | 否 | 可选 |
-| Free Dictionary API (`dictionaryapi.dev`) | 英英释义 | 否 | 可选 |
+| Azure Translator | 句子翻译，企业级稳定 | 是 | 可选 |
 
-> 免费接口为非官方公开端点，可能限流或调整，请合理使用。
+**Smart 模式**（默认）：自动判断输入。单词走有道（带释义 / 音标），句子走 Google。也可在偏好里强制指定单一源。
 
-### 可换源（付费 / 高质量）
+> 免费接口为非官方公开端点，可能限流或调整，请合理使用。Google Translate 在国内访问可能需代理，遇到不通可切换到 Azure。
 
-在 Preferences 里填上对应 Key 即可切换：
+### 可换源（路线图）
 
 - 有道智云开放平台（官方 API）
 - 百度翻译开放平台

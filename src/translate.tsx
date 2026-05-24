@@ -1,12 +1,12 @@
 import { Action, ActionPanel, getPreferenceValues, Icon, List, open } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
-import { getSource } from "./lib/sources";
+import { getSource, resolveSourceId } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
-import { DictEntry, SourceId } from "./lib/types";
+import { DictEntry, SourceMode } from "./lib/types";
 
 interface Prefs {
-  primarySource: SourceId;
+  primarySource: SourceMode;
   targetLanguage: string;
   ttsVoice: "us" | "uk";
 }
@@ -14,15 +14,15 @@ interface Prefs {
 export default function Translate() {
   const prefs = getPreferenceValues<Prefs>();
   const [query, setQuery] = useState("");
-  const source = getSource(prefs.primarySource);
   const trimmed = query.trim();
+  const sourceId = resolveSourceId(prefs.primarySource, trimmed);
 
   const { data, isLoading, error } = usePromise(
-    async (q: string, sourceId: string): Promise<DictEntry | null> => {
+    async (q: string, id: typeof sourceId): Promise<DictEntry | null> => {
       if (!q) return null;
-      return source.lookup(q);
+      return getSource(id).lookup(q);
     },
-    [trimmed, source.id],
+    [trimmed, sourceId],
     { execute: trimmed.length > 0 },
   );
 
