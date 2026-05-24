@@ -30,6 +30,7 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   const prefs = getPreferenceValues<Prefs>();
   const initial = props.launchContext?.query ?? "";
   const [query, setQuery] = useState(initial);
+  const [showDetail, setShowDetail] = useState(true);
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
   const sourceId: SourceId = sentence ? prefs.translatorSource : prefs.wordSource;
@@ -44,10 +45,12 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   );
 
   const navTitle = `${trimmed ? (sentence ? "翻译" : "查词") : "LightMindDict"} · ${SOURCE_LABEL[sourceId]}`;
+  const hasContent = !!data && ((data.explanations?.length ?? 0) > 0 || data.translations.length > 0);
 
   return (
     <List
       isLoading={isLoading}
+      isShowingDetail={showDetail && hasContent}
       searchText={query}
       onSearchTextChange={setQuery}
       searchBarPlaceholder="输入要查的词或句子"
@@ -67,7 +70,12 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
           description={`单词 → ${SOURCE_LABEL[prefs.wordSource]} ｜ 句子 → ${SOURCE_LABEL[prefs.translatorSource]}`}
         />
       ) : data ? (
-        <Results entry={data} voice={prefs.ttsVoice} />
+        <Results
+          entry={data}
+          voice={prefs.ttsVoice}
+          showDetail={showDetail}
+          onToggleDetail={() => setShowDetail((s) => !s)}
+        />
       ) : (
         <List.EmptyView icon={Icon.MagnifyingGlass} title="查询中…" />
       )}
@@ -75,7 +83,17 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   );
 }
 
-function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
+function Results({
+  entry,
+  voice,
+  showDetail,
+  onToggleDetail,
+}: {
+  entry: DictEntry;
+  voice: "us" | "uk";
+  showDetail: boolean;
+  onToggleDetail: () => void;
+}) {
   const phonetic = entry.phonetic
     ? [entry.phonetic.uk && `UK /${entry.phonetic.uk}/`, entry.phonetic.us && `US /${entry.phonetic.us}/`]
         .filter(Boolean)
@@ -99,6 +117,8 @@ function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
     );
   }
 
+  const detail = <List.Item.Detail markdown={entryMarkdown(entry)} metadata={metadataFor(entry, phonetic)} />;
+
   return (
     <>
       {entry.explanations?.length ? (
@@ -108,11 +128,24 @@ function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
               key={`ex-${i}`}
               icon={Icon.Book}
               title={line}
-              accessories={[
-                ...(phonetic && i === 0 ? [{ text: phonetic }] : []),
-                ...(i === 0 ? [sourceTag] : []),
-              ]}
-              actions={<EntryActions entry={entry} text={line} voice={voice} />}
+              accessories={
+                showDetail
+                  ? undefined
+                  : [
+                      ...(phonetic && i === 0 ? [{ text: phonetic }] : []),
+                      ...(i === 0 ? [sourceTag] : []),
+                    ]
+              }
+              detail={detail}
+              actions={
+                <EntryActions
+                  entry={entry}
+                  text={line}
+                  voice={voice}
+                  showDetail={showDetail}
+                  onToggleDetail={onToggleDetail}
+                />
+              }
             />
           ))}
         </List.Section>
@@ -124,8 +157,17 @@ function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
               key={`tr-${i}`}
               icon={Icon.Text}
               title={line}
-              accessories={i === 0 ? [sourceTag] : undefined}
-              actions={<EntryActions entry={entry} text={line} voice={voice} />}
+              accessories={showDetail ? undefined : i === 0 ? [sourceTag] : undefined}
+              detail={detail}
+              actions={
+                <EntryActions
+                  entry={entry}
+                  text={line}
+                  voice={voice}
+                  showDetail={showDetail}
+                  onToggleDetail={onToggleDetail}
+                />
+              }
             />
           ))}
         </List.Section>
@@ -134,16 +176,39 @@ function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
   );
 }
 
-function EntryActions({ entry, text, voice }: { entry: DictEntry; text: string; voice: "us" | "uk" }) {
+function EntryActions({
+  entry,
+  text,
+  voice,
+  showDetail,
+  onToggleDetail,
+}: {
+  entry: DictEntry;
+  text: string;
+  voice: "us" | "uk";
+  showDetail: boolean;
+  onToggleDetail: () => void;
+}) {
   const webUrl = browserUrlFor(entry);
   return (
     <ActionPanel>
       <Action.CopyToClipboard title="复制" content={text} />
       <Action
+        title={showDetail ? "隐藏详情" : "显示详情"}
+        icon={showDetail ? Icon.Sidebar : Icon.AppWindowSidebarRight}
+        onAction={onToggleDetail}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
+      />
+      <Action
         title="播放发音"
         icon={Icon.SpeakerHigh}
         onAction={() => open(ttsUrl(entry.query, voice))}
         shortcut={{ modifiers: ["cmd"], key: "p" }}
+      />
+      <Action.CopyToClipboard
+        title="复制完整释义"
+        content={entryMarkdown(entry)}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
       />
       {webUrl ? (
         <Action.OpenInBrowser
@@ -153,6 +218,58 @@ function EntryActions({ entry, text, voice }: { entry: DictEntry; text: string; 
         />
       ) : null}
     </ActionPanel>
+  );
+}
+
+function entryMarkdown(entry: DictEntry): string {
+  const lines: string[] = [`# ${entry.query}`, ""];
+  if (entry.phonetic) {
+    const ph = [
+      entry.phonetic.uk && `UK /${entry.phonetic.uk}/`,
+      entry.phonetic.us && `US /${entry.phonetic.us}/`,
+    ]
+      .filter(Boolean)
+      .join("  ·  ");
+    if (ph) lines.push(`*${ph}*`, "");
+  }
+  if (entry.explanations?.length) {
+    lines.push("## 释义", "");
+    entry.explanations.forEach((e) => lines.push(`- ${e}`));
+    lines.push("");
+  }
+  if (entry.translations.length) {
+    lines.push("## 翻译", "");
+    entry.translations.forEach((t) => lines.push(`- ${t}`));
+    lines.push("");
+  }
+  if (entry.examples?.length) {
+    lines.push("## 例句", "");
+    entry.examples.forEach((ex) => {
+      lines.push(`> ${ex.src}`);
+      lines.push(`>`);
+      lines.push(`> ${ex.trans}`);
+      lines.push("");
+    });
+  }
+  return lines.join("\n");
+}
+
+function metadataFor(entry: DictEntry, phonetic: string | undefined) {
+  return (
+    <List.Item.Detail.Metadata>
+      <List.Item.Detail.Metadata.TagList title="数据源">
+        <List.Item.Detail.Metadata.TagList.Item
+          text={SOURCE_LABEL[entry.source]}
+          color={SOURCE_COLOR[entry.source]}
+        />
+      </List.Item.Detail.Metadata.TagList>
+      {entry.detectedLanguage ? (
+        <List.Item.Detail.Metadata.Label title="检测语言" text={entry.detectedLanguage} />
+      ) : null}
+      {phonetic ? <List.Item.Detail.Metadata.Label title="音标" text={phonetic} /> : null}
+      <List.Item.Detail.Metadata.Separator />
+      <List.Item.Detail.Metadata.Label title="字数" text={String([...entry.query].length)} />
+    </List.Item.Detail.Metadata>
   );
 }
 
