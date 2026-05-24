@@ -210,7 +210,7 @@ function EntryActions({
         title={showDetail ? "隐藏详情" : "显示详情"}
         icon={showDetail ? Icon.Sidebar : Icon.AppWindowSidebarRight}
         onAction={onToggleDetail}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
+        shortcut={{ modifiers: ["cmd"], key: "y" }}
       />
       <Action
         title="播放发音"
