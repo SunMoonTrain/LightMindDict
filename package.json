@@ -22,6 +22,13 @@
       "subtitle": "LightMindDict",
       "description": "查询当前选中的文本",
       "mode": "no-view"
+    },
+    {
+      "name": "configure-azure",
+      "title": "Configure Azure",
+      "subtitle": "LightMindDict",
+      "description": "配置 Azure Translator 的 Key 与 Region",
+      "mode": "view"
     }
   ],
   "preferences": [
@@ -50,22 +57,6 @@
         { "title": "Azure Translator（需 Key）", "value": "azure" },
         { "title": "有道（公开接口，免费）", "value": "youdao-public" }
       ]
-    },
-    {
-      "name": "azureKey",
-      "title": "Azure Translator Key",
-      "description": "仅当上面任一源选 Azure 时使用",
-      "type": "password",
-      "required": false,
-      "default": ""
-    },
-    {
-      "name": "azureRegion",
-      "title": "Azure 区域",
-      "description": "仅当上面任一源选 Azure 时使用；如 eastasia / westus；全球资源填 global",
-      "type": "textfield",
-      "required": false,
-      "default": "global"
     },
     {
       "name": "targetLanguage",

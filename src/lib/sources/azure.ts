@@ -1,12 +1,7 @@
 import { getPreferenceValues } from "@raycast/api";
-import { DictEntry, DictSource } from "../types";
+import { getAzureCreds } from "../azure-config";
 import { PrefLang, resolveTarget } from "../lang";
-
-interface AzurePrefs {
-  azureKey?: string;
-  azureRegion?: string;
-  targetLanguage: PrefLang;
-}
+import { DictSource } from "../types";
 
 interface AzureResponse {
   translations: { text: string; to: string }[];
@@ -16,17 +11,18 @@ interface AzureResponse {
 export const azure: DictSource = {
   id: "azure",
   async lookup(query, signal) {
-    const { azureKey, azureRegion, targetLanguage } = getPreferenceValues<AzurePrefs>();
-    if (!azureKey) throw new Error("请在偏好设置中填入 Azure Translator Key");
+    const { targetLanguage } = getPreferenceValues<{ targetLanguage: PrefLang }>();
+    const { key, region } = await getAzureCreds();
+    if (!key) throw new Error("请先运行 'Configure Azure' 命令填入 Key");
 
     const to = resolveTarget(query, targetLanguage, "azure");
     const url = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${encodeURIComponent(to)}`;
 
     const headers: Record<string, string> = {
-      "Ocp-Apim-Subscription-Key": azureKey,
+      "Ocp-Apim-Subscription-Key": key,
       "Content-Type": "application/json",
     };
-    if (azureRegion) headers["Ocp-Apim-Subscription-Region"] = azureRegion;
+    if (region) headers["Ocp-Apim-Subscription-Region"] = region;
 
     const res = await fetch(url, {
       method: "POST",

@@ -51,18 +51,18 @@ npm run dev
 
 - `Translate` — 输入框直接查词 / 句
 - `Lookup Selection` — 对当前选中文本查词（可绑定全局快捷键）
-- `History` — 浏览最近查询
-- `Wordbook` — 管理生词本
+- `Configure Azure` — 配置 Azure Translator 的 Key / Region（仅选 Azure 源时需要）
 
 ## 配置
 
 打开 Raycast → Extensions → LightMindDict → Preferences：
 
-- **Primary Source**：主词典源
-- **Fallback Source**：主源失败时的回退源
-- **Target Language**：默认目标语言（auto / zh / en …）
+- **Word Source**：单词源（默认有道）
+- **Translator Source**：翻译源（默认 Google）
+- **Target Language**：默认目标语言（auto / zh / en / ja）
 - **TTS Voice**：发音偏好（美音 / 英音）
-- **API Keys**：付费源的认证信息（可选）
+
+Azure 的 Key 与 Region 不在偏好里 —— 通过 `Configure Azure` 命令打开表单填写，保存在 Raycast LocalStorage，不需要 Azure 时偏好面板里完全看不到。
 
 ## 开发
 
