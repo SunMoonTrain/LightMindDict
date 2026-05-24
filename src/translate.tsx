@@ -1,5 +1,5 @@
 import { Action, ActionPanel, getPreferenceValues, Icon, List, open } from "@raycast/api";
-import { useFetch } from "@raycast/utils";
+import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { getSource } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
@@ -15,14 +15,15 @@ export default function Translate() {
   const prefs = getPreferenceValues<Prefs>();
   const [query, setQuery] = useState("");
   const source = getSource(prefs.primarySource);
+  const trimmed = query.trim();
 
-  const { data, isLoading, error } = useFetch<DictEntry | null>(
-    `lightmind://lookup?q=${encodeURIComponent(query)}&src=${source.id}`,
-    {
-      execute: query.trim().length > 0,
-      parseResponse: async () => source.lookup(query.trim()),
-      keepPreviousData: true,
+  const { data, isLoading, error } = usePromise(
+    async (q: string, sourceId: string): Promise<DictEntry | null> => {
+      if (!q) return null;
+      return source.lookup(q);
     },
+    [trimmed, source.id],
+    { execute: trimmed.length > 0 },
   );
 
   return (
@@ -34,11 +35,13 @@ export default function Translate() {
     >
       {error ? (
         <List.EmptyView icon={Icon.Warning} title="查询失败" description={error.message} />
-      ) : !query.trim() ? (
+      ) : !trimmed ? (
         <List.EmptyView icon={Icon.MagnifyingGlass} title="输入要查的词" />
       ) : data ? (
         <Results entry={data} voice={prefs.ttsVoice} />
-      ) : null}
+      ) : (
+        <List.EmptyView icon={Icon.MagnifyingGlass} title="查询中…" />
+      )}
     </List>
   );
 }
@@ -49,6 +52,11 @@ function Results({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
         .filter(Boolean)
         .join("  ")
     : undefined;
+
+  const hasContent = (entry.explanations?.length ?? 0) > 0 || entry.translations.length > 0;
+  if (!hasContent) {
+    return <List.EmptyView icon={Icon.QuestionMark} title="没有找到结果" description={entry.query} />;
+  }
 
   return (
     <>
