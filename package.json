@@ -26,23 +26,35 @@
   ],
   "preferences": [
     {
-      "name": "primarySource",
-      "title": "主词典源",
-      "description": "Smart：单词走有道，句子走 Google。也可强制指定单一源。",
+      "name": "wordSource",
+      "title": "单词源",
+      "description": "查单词时使用的源（带释义 / 音标）",
       "type": "dropdown",
       "required": false,
-      "default": "smart",
+      "default": "youdao-public",
       "data": [
-        { "title": "Smart（自动：单词→有道，句子→Google）", "value": "smart" },
         { "title": "有道（公开接口，免费）", "value": "youdao-public" },
         { "title": "Google Translate（免费，可能需代理）", "value": "google" },
         { "title": "Azure Translator（需 Key）", "value": "azure" }
       ]
     },
     {
+      "name": "translatorSource",
+      "title": "翻译源",
+      "description": "翻译句子时使用的源",
+      "type": "dropdown",
+      "required": false,
+      "default": "google",
+      "data": [
+        { "title": "Google Translate（免费，可能需代理）", "value": "google" },
+        { "title": "Azure Translator（需 Key）", "value": "azure" },
+        { "title": "有道（公开接口，免费）", "value": "youdao-public" }
+      ]
+    },
+    {
       "name": "azureKey",
       "title": "Azure Translator Key",
-      "description": "Azure 认知服务的订阅密钥（选 Azure 源时必填）",
+      "description": "仅当上面任一源选 Azure 时使用",
       "type": "password",
       "required": false,
       "default": ""
@@ -50,7 +62,7 @@
     {
       "name": "azureRegion",
       "title": "Azure 区域",
-      "description": "如 eastasia / westus；全球资源可留空",
+      "description": "仅当上面任一源选 Azure 时使用；如 eastasia / westus；全球资源填 global",
       "type": "textfield",
       "required": false,
       "default": "global"

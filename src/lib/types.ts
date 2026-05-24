@@ -1,5 +1,4 @@
 export type SourceId = "youdao-public" | "google" | "azure";
-export type SourceMode = "smart" | SourceId;
 
 export interface DictEntry {
   query: string;

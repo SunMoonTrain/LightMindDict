@@ -1,12 +1,13 @@
 import { Action, ActionPanel, getPreferenceValues, Icon, List, open } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
-import { getSource, resolveSourceId } from "./lib/sources";
+import { getSource } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
-import { DictEntry, SourceMode } from "./lib/types";
+import { DictEntry, isSentence, SourceId } from "./lib/types";
 
 interface Prefs {
-  primarySource: SourceMode;
+  wordSource: SourceId;
+  translatorSource: SourceId;
   targetLanguage: string;
   ttsVoice: "us" | "uk";
 }
@@ -15,7 +16,7 @@ export default function Translate() {
   const prefs = getPreferenceValues<Prefs>();
   const [query, setQuery] = useState("");
   const trimmed = query.trim();
-  const sourceId = resolveSourceId(prefs.primarySource, trimmed);
+  const sourceId: SourceId = isSentence(trimmed) ? prefs.translatorSource : prefs.wordSource;
 
   const { data, isLoading, error } = usePromise(
     async (q: string, id: typeof sourceId): Promise<DictEntry | null> => {
