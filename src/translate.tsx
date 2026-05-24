@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Color, Detail, getPreferenceValues, Icon, LaunchProps, List, open } from "@raycast/api";
+import { Action, ActionPanel, Color, getPreferenceValues, Icon, LaunchProps, List, open } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { getSource } from "./lib/sources";
@@ -14,6 +14,8 @@ interface Prefs {
   ttsVoice: "us" | "uk";
 }
 
+type SectionKind = "explanations" | "translations" | "examples";
+
 const SOURCE_LABEL: Record<SourceId, string> = {
   "youdao-public": "有道",
   google: "Google",
@@ -24,6 +26,18 @@ const SOURCE_COLOR: Record<SourceId, Color> = {
   "youdao-public": Color.Red,
   google: Color.Blue,
   azure: Color.PrimaryText,
+};
+
+const SECTION_LABEL: Record<SectionKind, string> = {
+  explanations: "释义",
+  translations: "翻译",
+  examples: "例句",
+};
+
+const SECTION_ICON: Record<SectionKind, Icon> = {
+  explanations: Icon.Book,
+  translations: Icon.Text,
+  examples: Icon.QuoteBlock,
 };
 
 export default function Translate(props: LaunchProps<{ launchContext?: TranslateLaunchContext }>) {
@@ -47,28 +61,10 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   const navTitle = `${trimmed ? (sentence ? "翻译" : "查词") : "LightMindDict"} · ${SOURCE_LABEL[sourceId]}`;
   const hasContent = !!data && ((data.explanations?.length ?? 0) > 0 || data.translations.length > 0);
 
-  if (showDetail && data && hasContent) {
-    const phonetic = phoneticOf(data);
-    return (
-      <Detail
-        isLoading={isLoading}
-        markdown={entryMarkdown(data)}
-        metadata={detailMetadata(data, phonetic)}
-        navigationTitle={navTitle}
-        actions={
-          <DetailActions
-            entry={data}
-            voice={prefs.ttsVoice}
-            onBackToSearch={() => setShowDetail(false)}
-          />
-        }
-      />
-    );
-  }
-
   return (
     <List
       isLoading={isLoading}
+      isShowingDetail={showDetail && hasContent}
       searchText={query}
       onSearchTextChange={setQuery}
       searchBarPlaceholder="输入要查的词或句子"
@@ -97,11 +93,17 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
           title="输入要查的词"
           description={`单词 → ${SOURCE_LABEL[prefs.wordSource]} ｜ 句子 → ${SOURCE_LABEL[prefs.translatorSource]}`}
         />
+      ) : data && hasContent ? (
+        showDetail ? (
+          <DetailSections entry={data} voice={prefs.ttsVoice} />
+        ) : (
+          <ListRows entry={data} voice={prefs.ttsVoice} onShowDetail={() => setShowDetail(true)} />
+        )
       ) : data ? (
-        <Results
-          entry={data}
-          voice={prefs.ttsVoice}
-          onShowDetail={() => setShowDetail(true)}
+        <List.EmptyView
+          icon={Icon.QuestionMark}
+          title="没有找到结果"
+          description={`${data.query}（源：${SOURCE_LABEL[data.source]}）`}
         />
       ) : (
         <List.EmptyView icon={Icon.MagnifyingGlass} title="查询中…" />
@@ -110,7 +112,35 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   );
 }
 
-function Results({
+function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
+  const phonetic = phoneticOf(entry);
+  const sections: SectionKind[] = [];
+  if (entry.explanations?.length) sections.push("explanations");
+  if (entry.translations.length) sections.push("translations");
+  if (entry.examples?.length) sections.push("examples");
+
+  return (
+    <>
+      {sections.map((kind) => (
+        <List.Item
+          key={kind}
+          icon={SECTION_ICON[kind]}
+          title={SECTION_LABEL[kind]}
+          subtitle={`${countOf(entry, kind)} 项 · 来自 ${SOURCE_LABEL[entry.source]}`}
+          detail={
+            <List.Item.Detail
+              markdown={sectionMarkdown(entry, kind)}
+              metadata={listDetailMetadata(entry, phonetic)}
+            />
+          }
+          actions={<DetailRowActions entry={entry} kind={kind} voice={voice} />}
+        />
+      ))}
+    </>
+  );
+}
+
+function ListRows({
   entry,
   voice,
   onShowDetail,
@@ -120,23 +150,11 @@ function Results({
   onShowDetail: () => void;
 }) {
   const phonetic = phoneticOf(entry);
-
   const sourceTag = {
     tag: { value: SOURCE_LABEL[entry.source], color: SOURCE_COLOR[entry.source] },
     tooltip: `数据源：${SOURCE_LABEL[entry.source]}`,
   };
   const subtitle = `来自 ${SOURCE_LABEL[entry.source]}`;
-
-  const hasContent = (entry.explanations?.length ?? 0) > 0 || entry.translations.length > 0;
-  if (!hasContent) {
-    return (
-      <List.EmptyView
-        icon={Icon.QuestionMark}
-        title="没有找到结果"
-        description={`${entry.query}（源：${SOURCE_LABEL[entry.source]}）`}
-      />
-    );
-  }
 
   return (
     <>
@@ -202,7 +220,7 @@ function ListRowActions({
       />
       <Action.CopyToClipboard
         title="复制完整释义"
-        content={entryMarkdown(entry)}
+        content={fullMarkdown(entry)}
         shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
       />
       {webUrl ? (
@@ -216,24 +234,23 @@ function ListRowActions({
   );
 }
 
-function DetailActions({
+function DetailRowActions({
   entry,
+  kind,
   voice,
-  onBackToSearch,
 }: {
   entry: DictEntry;
+  kind: SectionKind;
   voice: "us" | "uk";
-  onBackToSearch: () => void;
 }) {
   const webUrl = browserUrlFor(entry);
   return (
     <ActionPanel>
-      <Action.CopyToClipboard title="复制完整释义" content={entryMarkdown(entry)} />
-      <Action
-        title="返回搜索"
-        icon={Icon.ArrowLeft}
-        onAction={onBackToSearch}
-        shortcut={{ modifiers: ["cmd"], key: "y" }}
+      <Action.CopyToClipboard title={`复制${SECTION_LABEL[kind]}`} content={sectionPlain(entry, kind)} />
+      <Action.CopyToClipboard
+        title="复制完整释义"
+        content={fullMarkdown(entry)}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
       />
       <Action
         title="播放发音"
@@ -261,7 +278,44 @@ function phoneticOf(entry: DictEntry): string | undefined {
   return parts.length ? parts.join("  ") : undefined;
 }
 
-function entryMarkdown(entry: DictEntry): string {
+function countOf(entry: DictEntry, kind: SectionKind): number {
+  switch (kind) {
+    case "explanations":
+      return entry.explanations?.length ?? 0;
+    case "translations":
+      return entry.translations.length;
+    case "examples":
+      return entry.examples?.length ?? 0;
+  }
+}
+
+function sectionMarkdown(entry: DictEntry, kind: SectionKind): string {
+  const lines: string[] = [`# ${entry.query}`, ""];
+  const phonetic = phoneticOf(entry);
+  if (phonetic) lines.push(`*${phonetic.replace("  ", "  ·  ")}*`, "");
+  lines.push(`## ${SECTION_LABEL[kind]}`, "");
+  if (kind === "explanations") {
+    entry.explanations?.forEach((e) => lines.push(`- ${e}`));
+  } else if (kind === "translations") {
+    entry.translations.forEach((t) => lines.push(`- ${t}`));
+  } else {
+    entry.examples?.forEach((ex) => {
+      lines.push(`> ${ex.src}`);
+      lines.push(`>`);
+      lines.push(`> ${ex.trans}`);
+      lines.push("");
+    });
+  }
+  return lines.join("\n");
+}
+
+function sectionPlain(entry: DictEntry, kind: SectionKind): string {
+  if (kind === "explanations") return (entry.explanations ?? []).join("\n");
+  if (kind === "translations") return entry.translations.join("\n");
+  return (entry.examples ?? []).map((ex) => `${ex.src}\n${ex.trans}`).join("\n\n");
+}
+
+function fullMarkdown(entry: DictEntry): string {
   const lines: string[] = [`# ${entry.query}`, ""];
   const phonetic = phoneticOf(entry);
   if (phonetic) lines.push(`*${phonetic.replace("  ", "  ·  ")}*`, "");
@@ -287,17 +341,22 @@ function entryMarkdown(entry: DictEntry): string {
   return lines.join("\n");
 }
 
-function detailMetadata(entry: DictEntry, phonetic: string | undefined) {
+function listDetailMetadata(entry: DictEntry, phonetic: string | undefined) {
   return (
-    <Detail.Metadata>
-      <Detail.Metadata.TagList title="数据源">
-        <Detail.Metadata.TagList.Item text={SOURCE_LABEL[entry.source]} color={SOURCE_COLOR[entry.source]} />
-      </Detail.Metadata.TagList>
-      {entry.detectedLanguage ? <Detail.Metadata.Label title="检测语言" text={entry.detectedLanguage} /> : null}
-      {phonetic ? <Detail.Metadata.Label title="音标" text={phonetic} /> : null}
-      <Detail.Metadata.Separator />
-      <Detail.Metadata.Label title="字数" text={String([...entry.query].length)} />
-    </Detail.Metadata>
+    <List.Item.Detail.Metadata>
+      <List.Item.Detail.Metadata.TagList title="数据源">
+        <List.Item.Detail.Metadata.TagList.Item
+          text={SOURCE_LABEL[entry.source]}
+          color={SOURCE_COLOR[entry.source]}
+        />
+      </List.Item.Detail.Metadata.TagList>
+      {entry.detectedLanguage ? (
+        <List.Item.Detail.Metadata.Label title="检测语言" text={entry.detectedLanguage} />
+      ) : null}
+      {phonetic ? <List.Item.Detail.Metadata.Label title="音标" text={phonetic} /> : null}
+      <List.Item.Detail.Metadata.Separator />
+      <List.Item.Detail.Metadata.Label title="字数" text={String([...entry.query].length)} />
+    </List.Item.Detail.Metadata>
   );
 }
 
