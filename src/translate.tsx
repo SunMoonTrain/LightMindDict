@@ -114,6 +114,10 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
 
 function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk" }) {
   const phonetic = phoneticOf(entry);
+  const sourceTag = {
+    tag: { value: SOURCE_LABEL[entry.source], color: SOURCE_COLOR[entry.source] },
+    tooltip: `数据源：${SOURCE_LABEL[entry.source]}`,
+  };
   const sections: SectionKind[] = [];
   if (entry.explanations?.length) sections.push("explanations");
   if (entry.translations.length) sections.push("translations");
@@ -126,13 +130,12 @@ function DetailSections({ entry, voice }: { entry: DictEntry; voice: "us" | "uk"
           key={kind}
           icon={SECTION_ICON[kind]}
           title={SECTION_LABEL[kind]}
-          subtitle={`${countOf(entry, kind)} 项 · 来自 ${SOURCE_LABEL[entry.source]}`}
-          detail={
-            <List.Item.Detail
-              markdown={sectionMarkdown(entry, kind)}
-              metadata={listDetailMetadata(entry, phonetic)}
-            />
-          }
+          subtitle={`${countOf(entry, kind)} 项`}
+          accessories={[
+            ...(kind === "explanations" && phonetic ? [{ text: phonetic, tooltip: "音标" }] : []),
+            sourceTag,
+          ]}
+          detail={<List.Item.Detail markdown={sectionMarkdown(entry, kind)} />}
           actions={<DetailRowActions entry={entry} kind={kind} voice={voice} />}
         />
       ))}
@@ -339,25 +342,6 @@ function fullMarkdown(entry: DictEntry): string {
     });
   }
   return lines.join("\n");
-}
-
-function listDetailMetadata(entry: DictEntry, phonetic: string | undefined) {
-  return (
-    <List.Item.Detail.Metadata>
-      <List.Item.Detail.Metadata.TagList title="数据源">
-        <List.Item.Detail.Metadata.TagList.Item
-          text={SOURCE_LABEL[entry.source]}
-          color={SOURCE_COLOR[entry.source]}
-        />
-      </List.Item.Detail.Metadata.TagList>
-      {entry.detectedLanguage ? (
-        <List.Item.Detail.Metadata.Label title="检测语言" text={entry.detectedLanguage} />
-      ) : null}
-      {phonetic ? <List.Item.Detail.Metadata.Label title="音标" text={phonetic} /> : null}
-      <List.Item.Detail.Metadata.Separator />
-      <List.Item.Detail.Metadata.Label title="字数" text={String([...entry.query].length)} />
-    </List.Item.Detail.Metadata>
-  );
 }
 
 function browserUrlFor(entry: DictEntry): string | undefined {
