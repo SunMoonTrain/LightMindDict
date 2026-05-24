@@ -30,7 +30,7 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
   const prefs = getPreferenceValues<Prefs>();
   const initial = props.launchContext?.query ?? "";
   const [query, setQuery] = useState(initial);
-  const [showDetail, setShowDetail] = useState(true);
+  const [showDetail, setShowDetail] = useState(false);
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
   const sourceId: SourceId = sentence ? prefs.translatorSource : prefs.wordSource;
@@ -117,7 +117,26 @@ function Results({
     );
   }
 
-  const detail = <List.Item.Detail markdown={entryMarkdown(entry)} metadata={metadataFor(entry, phonetic)} />;
+  if (showDetail) {
+    const firstLine = entry.explanations?.[0] ?? entry.translations[0] ?? entry.query;
+    return (
+      <List.Item
+        icon={Icon.Book}
+        title={entry.query}
+        subtitle={firstLine}
+        detail={<List.Item.Detail markdown={entryMarkdown(entry)} metadata={metadataFor(entry, phonetic)} />}
+        actions={
+          <EntryActions
+            entry={entry}
+            text={firstLine}
+            voice={voice}
+            showDetail={showDetail}
+            onToggleDetail={onToggleDetail}
+          />
+        }
+      />
+    );
+  }
 
   return (
     <>
@@ -128,15 +147,10 @@ function Results({
               key={`ex-${i}`}
               icon={Icon.Book}
               title={line}
-              accessories={
-                showDetail
-                  ? undefined
-                  : [
-                      ...(phonetic && i === 0 ? [{ text: phonetic }] : []),
-                      ...(i === 0 ? [sourceTag] : []),
-                    ]
-              }
-              detail={detail}
+              accessories={[
+                ...(phonetic && i === 0 ? [{ text: phonetic }] : []),
+                ...(i === 0 ? [sourceTag] : []),
+              ]}
               actions={
                 <EntryActions
                   entry={entry}
@@ -157,8 +171,7 @@ function Results({
               key={`tr-${i}`}
               icon={Icon.Text}
               title={line}
-              accessories={showDetail ? undefined : i === 0 ? [sourceTag] : undefined}
-              detail={detail}
+              accessories={i === 0 ? [sourceTag] : undefined}
               actions={
                 <EntryActions
                   entry={entry}
