@@ -56,6 +56,16 @@ export default function Translate(props: LaunchProps<{ launchContext?: Translate
       searchBarPlaceholder="输入要查的词或句子"
       navigationTitle={navTitle}
       throttle
+      searchBarAccessory={
+        <List.Dropdown
+          tooltip="视图模式"
+          value={showDetail ? "detail" : "list"}
+          onChange={(v) => setShowDetail(v === "detail")}
+        >
+          <List.Dropdown.Item title="列表视图" value="list" icon={Icon.AppWindowList} />
+          <List.Dropdown.Item title="详情视图" value="detail" icon={Icon.AppWindowSidebarRight} />
+        </List.Dropdown>
+      }
     >
       {error ? (
         <List.EmptyView
