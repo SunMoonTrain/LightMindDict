@@ -6,6 +6,8 @@ import {
   showHUD,
 } from "@raycast/api";
 
+const PREVIEW_LEN = 40;
+
 async function safeSelection(): Promise<string> {
   try {
     return (await getSelectedText()).trim();
@@ -22,16 +24,25 @@ async function safeClipboard(): Promise<string> {
   }
 }
 
+function preview(text: string): string {
+  return text.length > PREVIEW_LEN ? `${text.slice(0, PREVIEW_LEN)}…` : text;
+}
+
 export default async function LookupSelection() {
-  // Raycast Windows beta 的 getSelectedText() 在抓不到选区时
-  // 有时抛异常、有时返回空串，两种都要兜底到剪贴板。
   let text = await safeSelection();
-  if (!text) text = await safeClipboard();
+  let from: "划词" | "剪贴板" = "划词";
+  if (!text) {
+    text = await safeClipboard();
+    from = "剪贴板";
+  }
 
   if (!text) {
     await showHUD("没选中文本，剪贴板也空");
     return;
   }
+
+  // 显式告诉用户抓到了什么，避免"以为划词了实际读的是旧剪贴板"
+  await showHUD(`${from} → ${preview(text)}`);
 
   await launchCommand({
     name: "translate",
