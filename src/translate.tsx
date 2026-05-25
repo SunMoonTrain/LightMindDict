@@ -31,14 +31,12 @@ const SOURCE_LABEL: Record<SourceId, string> = {
   "youdao-public": "有道",
   google: "Google",
   azure: "Azure",
-  wiktionary: "Wiktionary",
 };
 
 const SOURCE_COLOR: Record<SourceId, Color> = {
   "youdao-public": Color.Red,
   google: Color.Blue,
   azure: Color.PrimaryText,
-  wiktionary: Color.Orange,
 };
 
 const SECTION_LABEL: Record<SectionKind, string> = {
@@ -415,7 +413,5 @@ function browserUrlFor(entry: DictEntry): string | undefined {
       return `https://translate.google.com/?sl=auto&tl=zh-CN&text=${q}`;
     case "azure":
       return undefined;
-    case "wiktionary":
-      return `https://en.wiktionary.org/wiki/${q}`;
   }
 }
