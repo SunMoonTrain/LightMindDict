@@ -30,10 +30,10 @@ function preview(text: string): string {
 
 export default async function LookupSelection() {
   let text = await safeSelection();
-  let from: "划词" | "剪贴板" = "划词";
+  let from: "划词" | "⚠ 剪贴板" = "划词";
   if (!text) {
     text = await safeClipboard();
-    from = "剪贴板";
+    from = "⚠ 剪贴板";
   }
 
   if (!text) {
@@ -41,7 +41,9 @@ export default async function LookupSelection() {
     return;
   }
 
-  // 显式告诉用户抓到了什么，避免"以为划词了实际读的是旧剪贴板"
+  // 显式告诉用户抓到了什么。"⚠ 剪贴板"表示回退到了剪贴板
+  // ——Raycast Windows beta 的 getSelectedText 不稳，看到这个
+  // 标记请确认剪贴板内容是不是想查的；不是的话 Ctrl+C 重试。
   await showHUD(`${from} → ${preview(text)}`);
 
   await launchCommand({

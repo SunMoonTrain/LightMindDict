@@ -50,6 +50,7 @@ npm run dev
 
 - `Translate` — 输入框直接查词 / 句
 - `Lookup Selection` — 对当前选中文本查词（推荐在 Raycast 偏好里绑全局快捷键）
+  > ⚠ **已知问题（Raycast Windows beta 平台层）**：`getSelectedText()` 在 Windows beta 上经常抓不到选区，会回退到读剪贴板。这是 Raycast 平台 API 的稳定性问题，不是本扩展的 bug —— 等他们修。当前应对方式：触发后 HUD 会显示来源（`划词 → xxx` 或 `⚠ 剪贴板 → xxx`）；看到 ⚠ 标记且内容不是想查的，就先 Ctrl+C 复制目标文本再触发一次（这次必走剪贴板路径，能拿到刚复制的内容）。
 - `Configure Azure` — 配置 Azure Translator 的 Key / Region（仅选 Azure 源时需要）
 
 视图切换：搜索栏右侧 Dropdown 在列表视图 / 详情视图之间切换；默认视图在 Preferences 里设置。
