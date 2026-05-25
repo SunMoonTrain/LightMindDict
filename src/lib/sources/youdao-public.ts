@@ -1,5 +1,4 @@
-import { getPreferenceValues } from "@raycast/api";
-import { PrefLang } from "../lang";
+import { detectInputLang } from "../lang";
 import { DictEntry, DictSource } from "../types";
 
 interface YoudaoJsonApi {
@@ -45,115 +44,131 @@ function pickStrings(arr: unknown): string[] {
   return arr.filter((s): s is string => typeof s === "string" && s.length > 0);
 }
 
-// Youdao 的 `le` 参数决定使用哪个语言上下文的词库。
-// 不设的话默认 le=eng（英中互译），无论 dicts 怎么写都不激活日 / 韩词库。
-function youdaoLocale(pref: PrefLang, query: string): string | undefined {
-  if (pref === "ja") return "jap";
-  if (pref === "ko") return "ko";
-  if (pref === "fr") return "fr";
+async function fetchYoudao(
+  query: string,
+  le: string | undefined,
+  signal?: AbortSignal,
+): Promise<YoudaoJsonApi> {
+  const url = new URL("https://dict.youdao.com/jsonapi");
+  url.searchParams.set("q", query);
+  if (le) url.searchParams.set("le", le);
+  url.searchParams.set("doctype", "json");
+  url.searchParams.set("jsonversion", "2");
+  url.searchParams.set(
+    "dicts",
+    JSON.stringify({
+      count: 99,
+      dicts: [["ec", "ce", "jc", "cj", "fanyi", "web_trans"]],
+    }),
+  );
+  const res = await fetch(url.toString(), { signal });
+  if (!res.ok) throw new Error(`Youdao request failed: ${res.status}`);
+  return (await res.json()) as YoudaoJsonApi;
+}
 
-  if (pref === "auto") {
-    // 含假名 → 日语
-    if (/[぀-ゟ゠-ヿ]/.test(query)) return "jap";
-    // 含韩文谚文音节 → 韩语
-    if (/[가-힯]/.test(query)) return "ko";
+function parseResponse(data: YoudaoJsonApi, query: string): DictEntry {
+  const entry: DictEntry = {
+    query,
+    source: "youdao-public",
+    translations: [],
+    explanations: [],
+  };
+
+  const ecWord = data.ec?.word?.[0];
+  if (ecWord) {
+    entry.phonetic = {
+      uk: ecWord.ukphone ?? ecWord.phone,
+      us: ecWord.usphone ?? ecWord.phone,
+    };
+    const expls =
+      ecWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
+      [];
+    entry.explanations = pickStrings(expls);
   }
 
-  return undefined; // 默认（中英）
+  const ceWord = data.ce?.word?.[0];
+  if (ceWord) {
+    const expls =
+      ceWord.trs?.flatMap(
+        (t) => t.tr?.map((x) => flattenCeItems(x.l?.i)) ?? [],
+      ) ?? [];
+    entry.explanations = [
+      ...(entry.explanations ?? []),
+      ...expls.filter((s) => s.length > 0),
+    ];
+  }
+
+  const jcWord = data.jc?.word?.[0];
+  if (jcWord) {
+    const reading = jcWord.reading;
+    const expls =
+      jcWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
+      [];
+    const cleanExpls = pickStrings(expls);
+    if (reading && cleanExpls.length > 0) {
+      cleanExpls[0] = `【${reading}】${cleanExpls[0]}`;
+    } else if (reading) {
+      cleanExpls.push(`【${reading}】`);
+    }
+    entry.explanations = [...(entry.explanations ?? []), ...cleanExpls];
+  }
+
+  const cjWord = data.cj?.word?.[0];
+  if (cjWord) {
+    const expls =
+      cjWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
+      [];
+    entry.explanations = [...(entry.explanations ?? []), ...pickStrings(expls)];
+  }
+
+  if (data.fanyi?.tran) entry.translations.push(data.fanyi.tran);
+  const webTrans = data.web_trans?.["web-translation"]?.[0]?.trans
+    ?.map((t) => t.value)
+    .filter(Boolean) as string[] | undefined;
+  if (webTrans?.length) entry.translations.push(...webTrans);
+
+  return entry;
+}
+
+function mergeEntries(a: DictEntry, b: DictEntry): DictEntry {
+  const expls = [...(a.explanations ?? []), ...(b.explanations ?? [])];
+  return {
+    query: a.query,
+    source: a.source,
+    phonetic: a.phonetic ?? b.phonetic,
+    explanations: Array.from(new Set(expls)),
+    translations: Array.from(new Set([...a.translations, ...b.translations])),
+  };
 }
 
 export const youdaoPublic: DictSource = {
   id: "youdao-public",
   async lookup(query, signal) {
-    const { targetLanguage } = getPreferenceValues<{
-      targetLanguage: PrefLang;
-    }>();
-    const le = youdaoLocale(targetLanguage, query);
+    const lang = detectInputLang(query);
 
-    const url = new URL("https://dict.youdao.com/jsonapi");
-    url.searchParams.set("q", query);
-    if (le) url.searchParams.set("le", le);
-    url.searchParams.set("doctype", "json");
-    url.searchParams.set("jsonversion", "2");
-    url.searchParams.set(
-      "dicts",
-      JSON.stringify({
-        count: 99,
-        dicts: [["ec", "ce", "jc", "cj", "fanyi", "web_trans"]],
-      }),
-    );
-
-    const res = await fetch(url.toString(), { signal });
-    if (!res.ok) throw new Error(`Youdao request failed: ${res.status}`);
-    const data = (await res.json()) as YoudaoJsonApi;
-
-    const entry: DictEntry = {
-      query,
-      source: "youdao-public",
-      translations: [],
-      explanations: [],
-    };
-
-    // 英中
-    const ecWord = data.ec?.word?.[0];
-    if (ecWord) {
-      entry.phonetic = {
-        uk: ecWord.ukphone ?? ecWord.phone,
-        us: ecWord.usphone ?? ecWord.phone,
-      };
-      const expls =
-        ecWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
-        [];
-      entry.explanations = pickStrings(expls);
+    // 纯汉字是真正的中/日歧义（林檎 在中日都成立）。并发跑两次：
+    // 一次默认（中文模式），一次 le=jap（日语模式），合并结果。
+    if (lang === "han") {
+      const [chinese, japanese] = await Promise.all([
+        fetchYoudao(query, undefined, signal),
+        fetchYoudao(query, "jap", signal),
+      ]);
+      return mergeEntries(
+        parseResponse(chinese, query),
+        parseResponse(japanese, query),
+      );
     }
 
-    // 中英
-    const ceWord = data.ce?.word?.[0];
-    if (ceWord) {
-      const expls =
-        ceWord.trs?.flatMap(
-          (t) => t.tr?.map((x) => flattenCeItems(x.l?.i)) ?? [],
-        ) ?? [];
-      entry.explanations = [
-        ...(entry.explanations ?? []),
-        ...expls.filter((s) => s.length > 0),
-      ];
-    }
-
-    // 日中
-    const jcWord = data.jc?.word?.[0];
-    if (jcWord) {
-      const reading = jcWord.reading;
-      const expls =
-        jcWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
-        [];
-      const cleanExpls = pickStrings(expls);
-      if (reading && cleanExpls.length > 0) {
-        cleanExpls[0] = `【${reading}】${cleanExpls[0]}`;
-      } else if (reading) {
-        cleanExpls.push(`【${reading}】`);
-      }
-      entry.explanations = [...(entry.explanations ?? []), ...cleanExpls];
-    }
-
-    // 中日
-    const cjWord = data.cj?.word?.[0];
-    if (cjWord) {
-      const expls =
-        cjWord.trs?.flatMap((t) => t.tr?.flatMap((x) => x.l?.i ?? []) ?? []) ??
-        [];
-      entry.explanations = [
-        ...(entry.explanations ?? []),
-        ...pickStrings(expls),
-      ];
-    }
-
-    if (data.fanyi?.tran) entry.translations.push(data.fanyi.tran);
-    const webTrans = data.web_trans?.["web-translation"]?.[0]?.trans
-      ?.map((t) => t.value)
-      .filter(Boolean) as string[] | undefined;
-    if (webTrans?.length) entry.translations.push(...webTrans);
-
-    return entry;
+    // 其它脚本能唯一确定语言
+    const le =
+      lang === "ja"
+        ? "jap"
+        : lang === "ko"
+          ? "ko"
+          : lang === "ru"
+            ? "ru"
+            : undefined;
+    const data = await fetchYoudao(query, le, signal);
+    return parseResponse(data, query);
   },
 };
