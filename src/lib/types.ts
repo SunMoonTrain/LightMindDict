@@ -1,4 +1,4 @@
-export type SourceId = "youdao-public" | "google" | "azure" | "free-dictionary";
+export type SourceId = "youdao-public" | "google" | "azure" | "wiktionary";
 
 export interface DictEntry {
   query: string;

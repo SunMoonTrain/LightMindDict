@@ -41,7 +41,7 @@
       "default": "youdao-public",
       "data": [
         { "title": "有道（公开接口，免费，中英为主）", "value": "youdao-public" },
-        { "title": "Free Dictionary（多语种，免费）", "value": "free-dictionary" },
+        { "title": "Wiktionary（多语种，免费，覆盖最广）", "value": "wiktionary" },
         { "title": "Google Translate（免费，可能需代理）", "value": "google" },
         { "title": "Azure Translator（需 Key）", "value": "azure" }
       ]
