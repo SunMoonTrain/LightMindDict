@@ -40,7 +40,7 @@
       "required": false,
       "default": "youdao-public",
       "data": [
-        { "title": "有道（公开接口，免费，中英为主）", "value": "youdao-public" },
+        { "title": "有道（公开接口，免费，中英 + 日中）", "value": "youdao-public" },
         { "title": "Jisho（专做日语，免费）", "value": "jisho" },
         { "title": "Google Translate（免费，可能需代理）", "value": "google" },
         { "title": "Azure Translator（需 Key）", "value": "azure" }
