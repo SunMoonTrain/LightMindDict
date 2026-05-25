@@ -6,17 +6,33 @@ import {
   showHUD,
 } from "@raycast/api";
 
-export default async function LookupSelection() {
-  let text = "";
+async function safeSelection(): Promise<string> {
   try {
-    text = (await getSelectedText()).trim();
+    return (await getSelectedText()).trim();
   } catch {
-    text = ((await Clipboard.readText()) ?? "").trim();
+    return "";
   }
+}
+
+async function safeClipboard(): Promise<string> {
+  try {
+    return ((await Clipboard.readText()) ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export default async function LookupSelection() {
+  // Raycast Windows beta 的 getSelectedText() 在抓不到选区时
+  // 有时抛异常、有时返回空串，两种都要兜底到剪贴板。
+  let text = await safeSelection();
+  if (!text) text = await safeClipboard();
+
   if (!text) {
-    await showHUD("没有可查询的文本");
+    await showHUD("没选中文本，剪贴板也空");
     return;
   }
+
   await launchCommand({
     name: "translate",
     type: LaunchType.UserInitiated,
