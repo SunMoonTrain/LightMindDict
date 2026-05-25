@@ -1,3 +1,5 @@
+import { getPreferenceValues } from "@raycast/api";
+import { PrefLang } from "../lang";
 import { DictEntry, DictSource } from "../types";
 
 interface YoudaoJsonApi {
@@ -14,14 +16,12 @@ interface YoudaoJsonApi {
       trs?: { tr?: { l?: { i?: (string | { "#text"?: string })[] } }[] }[];
     }[];
   };
-  // 日中：输入日语 → 中文释义
   jc?: {
     word?: {
       reading?: string;
       trs?: { tr?: { l?: { i?: string[] } }[] }[];
     }[];
   };
-  // 中日：输入中文 → 日语释义
   cj?: {
     word?: {
       trs?: { tr?: { l?: { i?: string[] } }[] }[];
@@ -45,18 +45,40 @@ function pickStrings(arr: unknown): string[] {
   return arr.filter((s): s is string => typeof s === "string" && s.length > 0);
 }
 
+// Youdao 的 `le` 参数决定使用哪个语言上下文的词库。
+// 不设的话默认 le=eng（英中互译），无论 dicts 怎么写都不激活日 / 韩词库。
+function youdaoLocale(pref: PrefLang, query: string): string | undefined {
+  if (pref === "ja") return "jap";
+  if (pref === "ko") return "ko";
+  if (pref === "fr") return "fr";
+
+  if (pref === "auto") {
+    // 含假名 → 日语
+    if (/[぀-ゟ゠-ヿ]/.test(query)) return "jap";
+    // 含韩文谚文音节 → 韩语
+    if (/[가-힯]/.test(query)) return "ko";
+  }
+
+  return undefined; // 默认（中英）
+}
+
 export const youdaoPublic: DictSource = {
   id: "youdao-public",
   async lookup(query, signal) {
+    const { targetLanguage } = getPreferenceValues<{
+      targetLanguage: PrefLang;
+    }>();
+    const le = youdaoLocale(targetLanguage, query);
+
     const url = new URL("https://dict.youdao.com/jsonapi");
     url.searchParams.set("q", query);
+    if (le) url.searchParams.set("le", le);
     url.searchParams.set("doctype", "json");
     url.searchParams.set("jsonversion", "2");
     url.searchParams.set(
       "dicts",
       JSON.stringify({
         count: 99,
-        // 加 jc / cj 让日中、中日字典也返回
         dicts: [["ec", "ce", "jc", "cj", "fanyi", "web_trans"]],
       }),
     );
@@ -98,7 +120,7 @@ export const youdaoPublic: DictSource = {
       ];
     }
 
-    // 日中（输入日语词，返回中文释义）
+    // 日中
     const jcWord = data.jc?.word?.[0];
     if (jcWord) {
       const reading = jcWord.reading;
@@ -107,7 +129,6 @@ export const youdaoPublic: DictSource = {
         [];
       const cleanExpls = pickStrings(expls);
       if (reading && cleanExpls.length > 0) {
-        // 把假名读音拼在第一条释义前面：【にほんご】日语
         cleanExpls[0] = `【${reading}】${cleanExpls[0]}`;
       } else if (reading) {
         cleanExpls.push(`【${reading}】`);
@@ -115,7 +136,7 @@ export const youdaoPublic: DictSource = {
       entry.explanations = [...(entry.explanations ?? []), ...cleanExpls];
     }
 
-    // 中日（输入中文，返回日语释义）
+    // 中日
     const cjWord = data.cj?.word?.[0];
     if (cjWord) {
       const expls =
@@ -127,7 +148,6 @@ export const youdaoPublic: DictSource = {
       ];
     }
 
-    // 翻译 + 网络释义
     if (data.fanyi?.tran) entry.translations.push(data.fanyi.tran);
     const webTrans = data.web_trans?.["web-translation"]?.[0]?.trans
       ?.map((t) => t.value)
