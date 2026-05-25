@@ -9,7 +9,7 @@ import {
   open,
 } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getCached, setCached } from "./lib/cache";
 import { getSource } from "./lib/sources";
 import { ttsUrl } from "./lib/tts";
@@ -55,9 +55,15 @@ export default function Translate(
   props: LaunchProps<{ launchContext?: TranslateLaunchContext }>,
 ) {
   const prefs = getPreferenceValues<Prefs>();
-  const initial = props.launchContext?.query ?? "";
-  const [query, setQuery] = useState(initial);
+  const launchQuery = props.launchContext?.query ?? "";
+  const [query, setQuery] = useState(launchQuery);
   const [showDetail, setShowDetail] = useState(prefs.defaultView === "detail");
+
+  // launchContext 在已挂载实例上变化时，useState 不会重跑初始化，
+  // 必须显式同步——否则划词查询新词时还显示上次的结果。
+  useEffect(() => {
+    if (launchQuery) setQuery(launchQuery);
+  }, [launchQuery]);
   const trimmed = query.trim();
   const sentence = isSentence(trimmed);
   const sourceId: SourceId = sentence
