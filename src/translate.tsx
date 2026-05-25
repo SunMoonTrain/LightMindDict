@@ -31,12 +31,14 @@ const SOURCE_LABEL: Record<SourceId, string> = {
   "youdao-public": "有道",
   google: "Google",
   azure: "Azure",
+  "free-dictionary": "FreeDict",
 };
 
 const SOURCE_COLOR: Record<SourceId, Color> = {
   "youdao-public": Color.Red,
   google: Color.Blue,
   azure: Color.PrimaryText,
+  "free-dictionary": Color.Green,
 };
 
 const SECTION_LABEL: Record<SectionKind, string> = {
@@ -413,5 +415,7 @@ function browserUrlFor(entry: DictEntry): string | undefined {
       return `https://translate.google.com/?sl=auto&tl=zh-CN&text=${q}`;
     case "azure":
       return undefined;
+    case "free-dictionary":
+      return `https://en.wiktionary.org/wiki/${q}`;
   }
 }
