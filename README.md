@@ -60,7 +60,7 @@ npm run dev
 
 - **Word Source**：单词源（默认有道）
 - **Translator Source**：翻译源（默认 Google）
-- **Target Language**：默认目标语言（auto / zh / en / ja）
+- **Target Language**：默认目标语言（auto / 中 / 英 / 日 / 韩 / 西 / 法 / 德 / 俄 / 葡 / 意 / 阿 / 印 / 泰 / 越），auto 含 CJK → 英、否则 → 中。多语言场景建议把 Translator Source 切到 Google 或 Azure（Youdao 公开接口主要服务中英互译）
 - **Default View**：Translate 命令打开时的初始视图（列表 / 详情）
 - **TTS Voice**：发音偏好（美音 / 英音）
 

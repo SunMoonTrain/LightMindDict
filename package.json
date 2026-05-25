@@ -66,10 +66,21 @@
       "required": false,
       "default": "auto",
       "data": [
-        { "title": "自动", "value": "auto" },
+        { "title": "自动（含 CJK → 英；其它 → 中）", "value": "auto" },
         { "title": "中文", "value": "zh-CHS" },
         { "title": "英文", "value": "en" },
-        { "title": "日文", "value": "ja" }
+        { "title": "日文", "value": "ja" },
+        { "title": "韩文", "value": "ko" },
+        { "title": "西班牙文", "value": "es" },
+        { "title": "法文", "value": "fr" },
+        { "title": "德文", "value": "de" },
+        { "title": "俄文", "value": "ru" },
+        { "title": "葡萄牙文", "value": "pt" },
+        { "title": "意大利文", "value": "it" },
+        { "title": "阿拉伯文", "value": "ar" },
+        { "title": "印地文", "value": "hi" },
+        { "title": "泰文", "value": "th" },
+        { "title": "越南文", "value": "vi" }
       ]
     },
     {
